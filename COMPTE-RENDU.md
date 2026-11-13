@@ -1,4 +1,4 @@
-# Compte rendu TP PetitPanier — ZAK / NOM2
+# Compte rendu TP PetitPanier — ZAK / OSSIBI / BOUZIANE / BEN-AKOUCHE / HAMOUTEN
 Systèmes utilisés : Linux
 
 ## Palier 1
@@ -83,11 +83,12 @@ Il vaut mieux modifier le fichier plutôt que de faire un scale car c'est une bo
 | Panne | Symptôme | Hypothèse | Commande de preuve et résultat | Correction
 |
 |---|---|---|---|---|
-| promo-1 | ImagePullBackOff | L'image n'est pas sur le noeud ni sur un depot distant | Commande "kubectl describe pod promo... --> Dans le section Event l'erreur est la suivante "Back-off pulling image "petitpanier:1.0"" | |
-| promo-2 | | | | |
-| promo-3 | | | | |
-6.2 (--previous) :
-6.3 (pourquoi Running mais inaccessible) :
+| promo-1 | ImagePullBackOff avec la commande get pod | L'image n'est pas sur le noeud ni sur un depot distant | Commande "kubectl describe pod promo... --> Dans le section Event l'erreur est la suivante "Back-off pulling image "petitpanier:1.0"" | kubectl set image deployment/promo-1 web=petitpanier:1.0 |
+
+| promo-2 | CrashLoopBackOff/erroravec la commande get pod 6 fois en 8min| | commande de preuve : kubectl describe pod promo-2-5fb657dc47-chgk6 dans la section Event : Beckoff x70 18 min backoff restarting failed container web in pod | Ajout de la variable PROMO_CODE "kubectl set env deployment/promo-2 PROMO_CODE=PROMO10" puis "kubectl patch deployment promo-2 --type=json -p='[{"op": "remove", "path": "/spec/template/spec/containers/0/command"}]'" pour le mettre à jour sans passer par le .yaml puis kubectl get pod running pour le promo-2|
+
+| promo-3 | This site can't be reached + timeout du port forwarding| problème réseau entre ma machine et le site web sur le pod | Tout est OK sauf kubectl get endpoints qui renvoi <none> de ce fait le pod ne connait aucun réseau et je ne peux pas joindre sa page web| kubectl patch service promo-3 --type=json -p='[{"op": "replace", "path": "/spec/selector/app", "value": "promo-3"}]', il y a maintenant deux endpoints pour les deux replicas et le site web est joignable |
+
 ## Palier 7
 | Étape | Commande | Si échec |
 |---|---|---|
