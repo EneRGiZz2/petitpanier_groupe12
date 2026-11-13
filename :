@@ -1,0 +1,50 @@
+# Compte rendu TP PetitPanier — ZAK / NOM2
+Systèmes utilisés : Linux
+## Palier 1
+1.1 : Client = c'est lui qui reçoit mes requêtes et les transmet au server qui agit comme un service qui tourne en fond.
+      Server = c'est lui qui gère et éxécute les requêtes.
+Un bloc server absent peut signifier que le service n'est pas lancé ou que les droits ne sont pas appropriés.
+1.2 : Dans -p "8080:80" le port 8080 est celui de mon PC et le port 80 celui du serveur.
+1.3 : L'image c'est le système d'exploitation utilisé par un conteneur et elle est indépendante de ce dernier.
+Défi 1 : Il est impossible d'avoir deux fois le même port actif sur un équipement.
+
+## Palier 2
+2.2 :Non, "EXPOSE 8080" ne suffit pas car il indique uniquement le port du conteneur vers lequel en écoute et pas le port côté client.
+2.3 : Le "." sert à indiquer le chemin que doit utiliser le daemon docker pour générer l'image (le dockerfile entre autre)
+Ici il s'agit du port 8080 et non pas juste 80 car lors de la génération de l'image nous avons indiqué que le port d'écoute serait le 8080.
+2.4 : Après le build la page affichait toujours 1.0 car l'image d'un conteneur n'est utilisé que lors de sa création et sa modification n'impact pas les conteneurs déjà lancés qui l'utilisent.
+Pour passer en 2.0 j'ai éteint le conteneur, supprimé le conteneur et créé le conteneur avec la nouvelle image.
+Docker stop petitpanier
+docker rm petitpanier
+docker run --name petitpanier -d -p 8080:8080 petitpanier:2.0 .
+Défi 2 : La seule étape en cached c'est le copy index.html car le fichier n'a pas été modifié depuis le dernier build. Le build a donc pris une à deux seconde.
+## Palier 3
+3.2 :
+3.3 :
+## Palier 4
+4.1 :
+4.2 :
+4.3 :
+## Palier 5
+5.1 :
+5.2 :
+5.3 :
+## Palier 6 — tableau de diagnostic
+| Panne | Symptôme | Hypothèse | Commande de preuve et résultat | Correction
+|
+|---|---|---|---|---|
+| promo-1 | | | | |
+| promo-2 | | | | |
+| promo-3 | | | | |
+6.2 (--previous) :
+6.3 (pourquoi Running mais inaccessible) :
+## Palier 7
+| Étape | Commande | Si échec |
+|---|---|---|
+| build | | |
+| test | | |
+| publish | | |
+| deploy | | |
+7.1 :
+Workflow n8n :
+## Défis réalisés
