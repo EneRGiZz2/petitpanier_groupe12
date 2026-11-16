@@ -1,6 +1,7 @@
 # Compte rendu TP PetitPanier — ZAK / OSSIBI / BOUZIANE / BEN-AKOUCHE / HAMOUTEN
 Systèmes utilisés : Linux
 
+
 ## Palier 1
 1.1 : 
 Client = c'est lui qui reçoit mes requêtes et les transmet au serveur qui agit comme un service qui tourne en fond.
@@ -15,6 +16,7 @@ L'image c'est le système d'exploitation utilisé par un conteneur et elle est i
 
 Défi 1 :
 Il est impossible d'avoir deux fois le même port actif sur un équipement.
+
 
 ## Palier 2
 2.2 :
@@ -34,6 +36,7 @@ docker run --name petitpanier -d -p 8080:8080 petitpanier:2.0 .
 Défi 2 : 
 La seule étape en cached c'est le copy index.html car le fichier n'a pas été modifié depuis le dernier build. Le build a donc pris une à deux secondes.
 
+
 ## Palier 3
 3.2 : 
 UP = Le service est en cours de démarrage.
@@ -46,6 +49,7 @@ La seconde commande échoue car je n'ai pas lancé le conteneur avec apache depu
 
 Défi 3 :
 La commande affiche bien la page index.html ce qui prouve que le container associé à "stats" arrive bien à joindre celui associé à "app".
+
 
 ## Palier 4
 4.1 :
@@ -63,6 +67,7 @@ Nous avons besoin d'un port forwarding car mon PC est externe au réseaux intern
 Défi 4 :
 je n'ai rien dans la section Events "<none>"
 
+
 ## Palier 5
 
 5.1 :
@@ -78,24 +83,41 @@ C'est mon noeud "petitpanier" qui a recréé un pod car on lui a dit qu'il falla
 Défi 5 :
 Il vaut mieux modifier le fichier plutôt que de faire un scale car c'est une bonne pratique permettant l'uniformité du système.
 
+
 ## Palier 6 — tableau de diagnostic
 
 | Panne | Symptôme | Hypothèse | Commande de preuve et résultat | Correction
-|
-|---|---|---|---|---|
+
 | promo-1 | ImagePullBackOff avec la commande get pod | L'image n'est pas sur le noeud ni sur un depot distant | Commande "kubectl describe pod promo... --> Dans le section Event l'erreur est la suivante "Back-off pulling image "petitpanier:1.0"" | kubectl set image deployment/promo-1 web=petitpanier:1.0 |
 
-| promo-2 | CrashLoopBackOff/erroravec la commande get pod 6 fois en 8min| | commande de preuve : kubectl describe pod promo-2-5fb657dc47-chgk6 dans la section Event : Beckoff x70 18 min backoff restarting failed container web in pod | Ajout de la variable PROMO_CODE "kubectl set env deployment/promo-2 PROMO_CODE=PROMO10" puis "kubectl patch deployment promo-2 --type=json -p='[{"op": "remove", "path": "/spec/template/spec/containers/0/command"}]'" pour le mettre à jour sans passer par le .yaml puis kubectl get pod running pour le promo-2|
+| promo-2 | CrashLoopBackOff/error avec la commande get pod 6 fois en 8min| | commande de preuve : kubectl describe pod promo-2-5fb657dc47-chgk6 dans la section Event : Beckoff x70 18 min backoff restarting failed container web in pod | Ajout de la variable PROMO_CODE "kubectl set env deployment/promo-2 PROMO_CODE=PROMO10" puis "kubectl patch deployment promo-2 --type=json -p='[{"op": "remove", "path": "/spec/template/spec/containers/0/command"}]'" pour le mettre à jour sans passer par le .yaml puis kubectl get pod running pour le promo-2|
 
-| promo-3 | This site can't be reached + timeout du port forwarding| problème réseau entre ma machine et le site web sur le pod | Tout est OK sauf kubectl get endpoints qui renvoi <none> de ce fait le pod ne connait aucun réseau et je ne peux pas joindre sa page web| kubectl patch service promo-3 --type=json -p='[{"op": "replace", "path": "/spec/selector/app", "value": "promo-3"}]', il y a maintenant deux endpoints pour les deux replicas et le site web est joignable |
+| promo-3 | This site can't be reached + timeout du port forwarding| problème réseau entre ma machine et le site web sur le pod | Tout est OK sauf kubectl get endpoints qui renvoi <none> de ce fait le pod ne connait aucun réseau et je ne peux pas joindre sa page web| kubectl patch service promo-3 --type=json -p='[{"op": "replace", "path": "/spec/selector/app", "value": "promo-3"}]', il y a maintenant deux endpoints pour les deux replicas et le site web est joignable
+
 
 ## Palier 7
 | Étape | Commande | Si échec |
-|---|---|---|
-| build | | |
-| test | | |
-| publish | | |
-| deploy | | |
+
+| build | docker build -t petitpanier:1.0 . | L'image n'est pas construite et le pipeline s'arrête.
+
+| test | kubectl apply -f pannes/panne-2.yaml | Le manifeste présente une erreur de syntaxe et bloque le deploiement
+
+| publish | kind load docker-image petitpanier:1.0 | L'image n'est pas chargée dans le pod, il générera une erreur en boucle ne connaissant aucune image pour démarrer
+
+| deploy | kubectl set image deployment/promo-1 web=petitpanier:1.0 | Le cluster ne prend pas en comtpe la MAJ et reste avec une version antérieure "fonctionnelle".
+
 7.1 :
-Workflow n8n :
-## Défis réalisés
+Une pipeline tague l'image avec un identifiant de commit plutôt qu'avec latest car cela permet une meilleure traçabilité sur l'image exacte utilisée que ce soit pour l'admin ou pour kube pour lui permettre de savoir s'il doit télécharger une nouvelle image ou si l'ancienne est toujours d'actualité.
+
+7.2 :
+Noeud 1 : Déclencheur (Webhook GitLab)
+--> Réceptionne la notification envoyée par le pipeline GitLab dès qu'un job ou un déploiement se termine.
+
+Noeud 2 : Optionnel / Filtrage (Code)
+--> Extrait proprement le statut du déploiement depuis le JSON reçu.
+
+Noeud 3 : Condition (If)
+--> Vérifie si le statut = en échec (statut == failed). Si c'est true, le workflow continue vers l'alerte, si c'est false, il s'arrête.
+
+Noeud 4 : Action (Slack)
+--> Envoie un message d'alerte textuel formaté sur le canal #petitpanier-ops pour prévenir l'équipe technique de l'échec du déploiement.
