@@ -121,3 +121,5 @@ Noeud 3 : Condition (If)
 
 Noeud 4 : Action (Slack)
 --> Envoie un message d'alerte textuel formaté sur le canal #petitpanier-ops pour prévenir l'équipe technique de l'échec du déploiement.
+
+Les identifiants sont stockés dans les Credentials integrés de n8n ou sous forme de variables d'environnement chiffrées par le serveur.
